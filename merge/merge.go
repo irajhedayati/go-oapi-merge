@@ -160,35 +160,53 @@ func navigateToFragment(nested yaml.MapSlice, fragment, refPath string) (interfa
 func processNestedFiles(urlsToParse map[string]bool, mainAPI *OpenAPI) error {
 	componentTypes := []string{"schemas", "responses", "parameters", "examples", "requestBodies", "headers", "securitySchemes", "links", "callbacks"}
 
-	for url := range urlsToParse {
-		data, err := os.ReadFile(url)
-		if err != nil {
-			return fmt.Errorf("failed to read '%s': %w", url, err)
-		}
-
-		var nested yaml.MapSlice
-		if err := yaml.UnmarshalWithOptions(data, &nested, yaml.UseOrderedMap()); err != nil {
-			return fmt.Errorf("failed to parse '%s': %w", url, err)
-		}
-
-		if nestedComponents := getMapSliceValue(nested, "components"); nestedComponents != nil {
-			if compMap, ok := nestedComponents.(yaml.MapSlice); ok {
-				mergeComponents(compMap, mainAPI, componentTypes)
+	// Use a worklist so that files discovered transitively (e.g. a schema file
+	// that $refs another schema file) are also processed.
+	processed := make(map[string]bool)
+	for {
+		// Collect all files that have been queued but not yet processed.
+		var pending []string
+		for url := range urlsToParse {
+			if !processed[url] {
+				pending = append(pending, url)
 			}
 		}
+		if len(pending) == 0 {
+			break
+		}
 
-		for _, ct := range componentTypes {
-			if getMapSliceValue(nested, ct) != nil {
-				mergeComponents(nested, mainAPI, componentTypes)
-				break
+		for _, url := range pending {
+			processed[url] = true
+
+			data, err := os.ReadFile(url)
+			if err != nil {
+				return fmt.Errorf("failed to read '%s': %w", url, err)
+			}
+
+			var nested yaml.MapSlice
+			if err := yaml.UnmarshalWithOptions(data, &nested, yaml.UseOrderedMap()); err != nil {
+				return fmt.Errorf("failed to parse '%s': %w", url, err)
+			}
+
+			if nestedComponents := getMapSliceValue(nested, "components"); nestedComponents != nil {
+				if compMap, ok := nestedComponents.(yaml.MapSlice); ok {
+					mergeComponents(compMap, mainAPI, componentTypes, urlsToParse, url)
+				}
+			}
+
+			for _, ct := range componentTypes {
+				if getMapSliceValue(nested, ct) != nil {
+					mergeComponents(nested, mainAPI, componentTypes, urlsToParse, url)
+					break
+				}
 			}
 		}
 	}
 	return nil
 }
 
-func mergeComponents(nestedComponents yaml.MapSlice, mainAPI *OpenAPI, componentTypes []string) {
-	findRefs(&nestedComponents, nil, "")
+func mergeComponents(nestedComponents yaml.MapSlice, mainAPI *OpenAPI, componentTypes []string, urlsToParse map[string]bool, currentFilePath string) {
+	findRefs(&nestedComponents, urlsToParse, currentFilePath)
 
 	for _, compType := range componentTypes {
 		nestedComp, ok := getMapSliceValue(nestedComponents, compType).(yaml.MapSlice)

@@ -1,4 +1,4 @@
-module github.com/NoL1m1ts/go-oapi-merge
+module github.com/irajhedayati/go-oapi-merge
 
 go 1.23
 

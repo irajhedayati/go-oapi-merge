@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/NoL1m1ts/go-oapi-merge/merge"
+	"github.com/irajhedayati/go-oapi-merge/merge"
 	"log"
 )
 

@@ -1,8 +1,10 @@
 # go-oapi-merge
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Go Report Card](https://goreportcard.com/badge/github.com/NoL1m1ts/go-oapi-merge)](https://goreportcard.com/report/github.com/NoL1m1ts/go-oapi-merge)
-[![Go Reference](https://pkg.go.dev/badge/github.com/NoL1m1ts/go-oapi-merge.svg)](https://pkg.go.dev/github.com/NoL1m1ts/go-oapi-merge)
+[![Go Report Card](https://goreportcard.com/badge/github.com/irajhedayati/go-oapi-merge)](https://goreportcard.com/report/github.com/irajhedayati/go-oapi-merge)
+[![Go Reference](https://pkg.go.dev/badge/github.com/irajhedayati/go-oapi-merge.svg)](https://pkg.go.dev/github.com/irajhedayati/go-oapi-merge)
+
+> **Maintained fork notice**: This is a friendly fork of [NoL1m1ts/go-oapi-merge](https://github.com/NoL1m1ts/go-oapi-merge), continued here after the original repository became inactive. All credit for the original design and implementation goes to [NoL1m1ts](https://github.com/NoL1m1ts). This fork exists to keep the project maintained, review contributions, and add improvements. Contributions previously proposed upstream are welcome here.
 
 `go-oapi-merge` is a CLI tool for merging OpenAPI YAML files. It resolves `$ref` references across multiple files and combines them into a single, unified OpenAPI specification. Perfect for managing large or modular OpenAPI projects.
 
@@ -22,7 +24,7 @@
 Install `go-oapi-merge` using `go install`:
 
 ```bash
-go install github.com/NoL1m1ts/go-oapi-merge@latest
+go install github.com/irajhedayati/go-oapi-merge@latest
 ```
 
 ---
@@ -154,7 +156,7 @@ go-oapi-merge -input examples/api.yaml -output merged_api.yaml
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/NoL1m1ts/go-oapi-merge.git
+   git clone https://github.com/irajhedayati/go-oapi-merge.git
    cd go-oapi-merge
    ```
 
@@ -186,17 +188,20 @@ Please ensure your code follows the project’s coding standards and includes ap
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
+The original copyright is held by [NoL1m1ts](https://github.com/NoL1m1ts) (2023). Modifications and continued maintenance are copyright Iraj Hedayati (2026-present). Both notices are preserved in the `LICENSE` file as required by the MIT License.
+
 ---
 
-### Author
+### Authors and Credits
 
-Developed and maintained by [NoL1m1ts](https://github.com/NoL1m1ts).
+- **Original author**: [NoL1m1ts](https://github.com/NoL1m1ts) — designed and built the original [go-oapi-merge](https://github.com/NoL1m1ts/go-oapi-merge).
+- **Current maintainer**: [Iraj Hedayati](https://github.com/irajhedayati) — maintains this fork after the upstream project became inactive.
 
 ---
 
 ### Support
 
-If you encounter any issues or have questions, please [open an issue](https://github.com/NoL1m1ts/go-oapi-merge/issues) on GitHub.
+If you encounter any issues or have questions, please [open an issue](https://github.com/irajhedayati/go-oapi-merge/issues) on GitHub.
 
 ---
 

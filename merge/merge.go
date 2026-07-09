@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/goccy/go-yaml"
@@ -71,6 +72,8 @@ func OapiYaml(inputFile, outputFile string) error {
 	if err := processNestedFiles(urlsToParse, &mainAPI); err != nil {
 		return err
 	}
+
+	sortComponents(&mainAPI.Components)
 
 	data, err = yaml.MarshalWithOptions(&mainAPI, yaml.Indent(2), yaml.UseLiteralStyleIfMultiline(true))
 	if err != nil {
@@ -174,6 +177,11 @@ func processNestedFiles(urlsToParse map[string]bool, mainAPI *OpenAPI) error {
 		if len(pending) == 0 {
 			break
 		}
+		// Sort so processing order is deterministic — Go map iteration is
+		// randomized, which would otherwise make merge results (and thus the
+		// final output) vary between runs when the same key is defined in
+		// more than one file.
+		sort.Strings(pending)
 
 		for _, url := range pending {
 			processed[url] = true
@@ -278,4 +286,50 @@ func resolveRef(relativePath, currentFilePath string) string {
 		return relativePath
 	}
 	return filepath.Clean(filepath.Join(filepath.Dir(currentFilePath), relativePath))
+}
+
+// sortComponents produces deterministic output by (a) ordering component
+// types in the OpenAPI-canonical order and (b) alphabetically sorting the
+// keys within each type. Any unknown component types are preserved and
+// appended alphabetically after the canonical ones.
+func sortComponents(components *yaml.MapSlice) {
+	if components == nil || len(*components) == 0 {
+		return
+	}
+
+	canonical := []string{"schemas", "responses", "parameters", "examples", "requestBodies", "headers", "securitySchemes", "links", "callbacks"}
+	order := make(map[string]int, len(canonical))
+	for i, name := range canonical {
+		order[name] = i
+	}
+
+	sort.SliceStable(*components, func(i, j int) bool {
+		ki, _ := (*components)[i].Key.(string)
+		kj, _ := (*components)[j].Key.(string)
+		oi, iOK := order[ki]
+		oj, jOK := order[kj]
+		switch {
+		case iOK && jOK:
+			return oi < oj
+		case iOK:
+			return true
+		case jOK:
+			return false
+		default:
+			return ki < kj
+		}
+	})
+
+	for i := range *components {
+		inner, ok := (*components)[i].Value.(yaml.MapSlice)
+		if !ok {
+			continue
+		}
+		sort.SliceStable(inner, func(a, b int) bool {
+			ka, _ := inner[a].Key.(string)
+			kb, _ := inner[b].Key.(string)
+			return ka < kb
+		})
+		(*components)[i].Value = inner
+	}
 }

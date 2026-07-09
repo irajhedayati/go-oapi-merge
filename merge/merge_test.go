@@ -1,6 +1,7 @@
 package merge
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
@@ -248,5 +249,129 @@ func writeFile(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
 		t.Fatalf("failed to write %s: %v", path, err)
+	}
+}
+
+func TestDeterministicOutput(t *testing.T) {
+	// Regression test: with schemas spread across multiple files, Go's
+	// randomized map iteration used to make the output vary between runs.
+	// Running the merge many times must always produce identical bytes.
+	tmpDir := t.TempDir()
+
+	writeFile(t, filepath.Join(tmpDir, "schemas_a.yaml"), `
+components:
+  schemas:
+    Zebra:
+      type: object
+    Apple:
+      type: object
+    Mango:
+      type: object
+`)
+	writeFile(t, filepath.Join(tmpDir, "schemas_b.yaml"), `
+components:
+  schemas:
+    Banana:
+      type: object
+    Yak:
+      type: object
+`)
+	writeFile(t, filepath.Join(tmpDir, "responses.yaml"), `
+components:
+  responses:
+    NotFound:
+      description: Not Found
+    OK:
+      description: OK
+`)
+	writeFile(t, filepath.Join(tmpDir, "paths.yaml"), `
+test:
+  get:
+    responses:
+      "200":
+        $ref: './responses.yaml#/components/responses/OK'
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: './schemas_a.yaml#/components/schemas/Apple'
+`)
+	writeFile(t, filepath.Join(tmpDir, "api.yaml"), `
+openapi: "3.0.0"
+info:
+  title: Test
+  version: "1.0"
+paths:
+  /test:
+    $ref: './paths.yaml#/test'
+components:
+  schemas:
+    $ref: './schemas_b.yaml#/components/schemas'
+`)
+
+	input := filepath.Join(tmpDir, "api.yaml")
+	first := filepath.Join(tmpDir, "first.yaml")
+	if err := OapiYaml(input, first); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	firstBytes, _ := os.ReadFile(first)
+
+	for i := 0; i < 20; i++ {
+		out := filepath.Join(tmpDir, "run.yaml")
+		if err := OapiYaml(input, out); err != nil {
+			t.Fatalf("run %d: unexpected error: %v", i, err)
+		}
+		got, _ := os.ReadFile(out)
+		if !bytes.Equal(firstBytes, got) {
+			t.Fatalf("run %d: output differs from first run\n--- first ---\n%s\n--- run %d ---\n%s", i, firstBytes, i, got)
+		}
+	}
+}
+
+func TestSortedComponents(t *testing.T) {
+	tmpDir := t.TempDir()
+	input := filepath.Join(tmpDir, "api.yaml")
+	output := filepath.Join(tmpDir, "out.yaml")
+
+	writeFile(t, input, `
+openapi: "3.0.0"
+info:
+  title: Test
+  version: "1.0"
+paths:
+  /test:
+    get:
+      responses:
+        "200":
+          description: OK
+components:
+  schemas:
+    Zebra:
+      type: object
+    Apple:
+      type: object
+    Mango:
+      type: object
+    Banana:
+      type: object
+`)
+	if err := OapiYaml(input, output); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	data, _ := os.ReadFile(output)
+	content := string(data)
+
+	names := []string{"Apple:", "Banana:", "Mango:", "Zebra:"}
+	last := -1
+	for _, name := range names {
+		idx := strings.Index(content, name)
+		if idx < 0 {
+			t.Fatalf("expected %q in output", name)
+		}
+		if idx <= last {
+			t.Errorf("expected component keys sorted alphabetically; %q appeared out of order", name)
+		}
+		last = idx
 	}
 }

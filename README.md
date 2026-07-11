@@ -123,7 +123,8 @@ examples/
 ```
 
 ### Main File (api.yaml)
-```yaml
+
+```plain
 openapi: 3.0.0
 info:
   title: Example API
@@ -181,6 +182,20 @@ We welcome contributions! Here’s how you can help:
 3. Submit a pull request with a detailed description of your changes.
 
 Please ensure your code follows the project’s coding standards and includes appropriate tests.
+
+### Linting and code quality
+
+The project uses [golangci-lint](https://golangci-lint.run) with the configuration in `.golangci.yml`. A `Makefile` wraps the common workflows:
+
+```bash
+make install-tools   # installs the pinned golangci-lint into $GOPATH/bin
+make lint            # run the linter
+make lint-fix        # run the linter and auto-fix what it can
+make test            # go test -race -count=1 ./...
+make check           # vet + lint + test (what CI runs)
+```
+
+The `lint` target auto-installs the pinned linter version the first time you run it, so `make check` works on a fresh clone. Both local runs and CI use the same pinned version — bump it in the `Makefile` and `.github/workflows/go.yml` together.
 
 ---
 

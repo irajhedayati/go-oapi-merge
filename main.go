@@ -3,8 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/irajhedayati/go-oapi-merge/merge"
 	"log"
+
+	"github.com/irajhedayati/go-oapi-merge/merge"
 )
 
 func main() {

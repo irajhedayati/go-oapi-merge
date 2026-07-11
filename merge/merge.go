@@ -73,5 +73,5 @@ func OapiYaml(inputFile, outputFile string) error {
 	if err != nil {
 		return fmt.Errorf("failed to marshal YAML: %w", err)
 	}
-	return os.WriteFile(outputFile, data, 0644)
+	return os.WriteFile(outputFile, data, 0o644)
 }

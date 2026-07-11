@@ -35,7 +35,7 @@ func processNestedFiles(urlsToParse map[string]bool, mainAPI *OpenAPI) error {
 }
 
 // collectPendingURLs returns the queued URLs that have not been processed yet.
-func collectPendingURLs(urlsToParse map[string]bool, processed map[string]bool) []string {
+func collectPendingURLs(urlsToParse, processed map[string]bool) []string {
 	var pending []string
 	for url := range urlsToParse {
 		if !processed[url] {
@@ -48,7 +48,7 @@ func collectPendingURLs(urlsToParse map[string]bool, processed map[string]bool) 
 // processSingleNestedFile reads one queued file, marks it as processed,
 // and merges the components it defines into mainAPI. Any new external
 // $refs discovered during the merge are added to urlsToParse.
-func processSingleNestedFile(url string, mainAPI *OpenAPI, urlsToParse map[string]bool, processed map[string]bool) error {
+func processSingleNestedFile(url string, mainAPI *OpenAPI, urlsToParse, processed map[string]bool) error {
 	processed[url] = true
 
 	nested, err := readAndParseFile(url)
